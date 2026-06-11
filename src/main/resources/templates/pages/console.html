@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>控制台</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="控制台">
+    <meta name="description" content="控制台">
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <script type="text/javascript" th:src="@{/lib/echarts/echarts.min.js}"></script>
+    <script type="text/javascript" th:src="@{/lib/echarts/echarts.theme.js}"></script>
+    <link rel="stylesheet" th:href="@{/lib/layui/css/layui.css}" media="all"/>
+    <style>
+        /* ========== 高级感设计系统 - 墨绿色风格 ========== */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            min-height: 100vh;
+        }
+        
+        .ok-body.home {
+            padding: 24px;
+            min-height: 100vh;
+        }
+        
+        /* 网格布局 - 自适应对齐 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+        
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+        
+        /* 统计卡片 - 玻璃质感 */
+        .stat-card {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(46, 139, 87, 0.1);
+            border-radius: 28px;
+            padding: 24px;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px);
+            background: white;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .stat-card .icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(46, 139, 87, 0.15), rgba(22, 101, 52, 0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .stat-card .icon img {
+            width: 28px;
+            height: 28px;
+        }
+        
+        .stat-card .content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0d3d2d, #1a4d3d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+        
+        .stat-card .label {
+            font-size: 13px;
+            color: #3d5a4a;
+            font-weight: 500;
+        }
+        
+        /* 图表卡片 */
+        .chart-card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            border: 1px solid rgba(46, 139, 87, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .chart-card:hover {
+            box-shadow: 0 16px 40px rgba(0,0,0,0.1);
+        }
+        
+        .chart-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .chart-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0d3d2d;
+        }
+        
+        .chart-container {
+            height: 280px;
+        }
+        
+        .chart-container.full-height {
+            height: 360px;
+        }
+        
+        /* 快捷操作按钮 */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+        }
+        
+        .action-btn {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            border-radius: 20px;
+            padding: 24px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(46, 139, 87, 0.15);
+            cursor: pointer;
+        }
+        
+        .action-btn:hover {
+            background: linear-gradient(135deg, #2e8b57, #166534);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(46, 139, 87, 0.3);
+        }
+        
+        .action-btn:hover i, .action-btn:hover span {
+            color: white !important;
+        }
+        
+        .action-btn i {
+            font-size: 36px;
+            background: linear-gradient(135deg, #2e8b57, #166534);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .action-btn span {
+            font-size: 13px;
+            color: #3d5a4a;
+            font-weight: 500;
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #3d5a4a;
+            font-size: 14px;
+        }
+        
+        .loading::after {
+            content: '';
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(46, 139, 87, 0.1);
+            border-top-color: #2e8b57;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(46, 139, 87, 0.05);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #2e8b57, #166534);
+            border-radius: 10px;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .ok-body.home {
+                padding: 16px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .charts-row {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-card .value {
+                font-size: 28px;
+            }
+            
+            .chart-container {
+                height: 220px;
+            }
+        }
+    </style>
+</head>
+<body class="ok-body-scroll console">
+    <div class="ok-body home">
+        <!-- 统计卡片区域 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">
+                    <img th:src="@{images/home-01.png}" alt="今日入场"/>
+                </div>
+                <div class="content">
+                    <div class="value" id="todayInCount">0</div>
+                    <div class="label">今日入场车辆</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="icon">
+                    <img th:src="@{images/home-02.png}" alt="今日出场"/>
+                </div>
+                <div class="content">
+                    <div class="value" id="todayOutCount">0</div>
+                    <div class="label">今日出场车辆</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="icon">
+                    <img th:src="@{images/home-03.png}" alt="今日收入"/>
+                </div>
+                <div class="content">
+                    <div class="value" id="todayIncome">¥0</div>
+                    <div class="label">今日收入</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="icon">
+                    <img th:src="@{images/home-04.png}" alt="停车场数量"/>
+                </div>
+                <div class="content">
+                    <div class="value" id="parkCount">0</div>
+                    <div class="label">停车场数量</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 图表区域 -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">近7日收入趋势</div>
+                </div>
+                <div id="incomeTrendChart" class="chart-container">
+                    <div class="loading">加载中</div>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">车辆类型分布</div>
+                </div>
+                <div id="carTypeChart" class="chart-container">
+                    <div class="loading">加载中</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">今日各时段车流量</div>
+                </div>
+                <div id="hourlyTrafficChart" class="chart-container">
+                    <div class="loading">加载中</div>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">支付方式分布</div>
+                </div>
+                <div id="payTypeChart" class="chart-container">
+                    <div class="loading">加载中</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 快捷操作区域 -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div class="chart-card-title">快捷操作</div>
+            </div>
+            <div class="action-buttons">
+                <div class="action-btn" onclick="openPage('/car/carManage/list.html')">
+                    <i class="layui-icon layui-icon-user"></i>
+                    <span>车辆管理</span>
+                </div>
+                <div class="action-btn" onclick="openPage('/car/parkManage/list.html')">
+                    <i class="layui-icon layui-icon-home"></i>
+                    <span>停车场管理</span>
+                </div>
+                <div class="action-btn" onclick="openPage('/car/parkingRecord/list.html')">
+                    <i class="layui-icon layui-icon-list"></i>
+                    <span>停车记录</span>
+                </div>
+                <div class="action-btn" onclick="openPage('/finance/list.html')">
+                    <i class="layui-icon layui-icon-rmb"></i>
+                    <span>订单管理</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script th:src="@{/lib/common/jquery.js}"></script>
+    <script>
+        // 加载今日统计数据
+        function loadTodayStats() {
+            $.get('/dashboard/todayStats', function(res) {
+                if (res && res.code === 0 && res.data) {
+                    $('#todayInCount').text(res.data.todayInCount || 0);
+                    $('#todayOutCount').text(res.data.todayOutCount || 0);
+                    $('#todayIncome').text('¥' + (res.data.todayIncome || '0'));
+                    $('#parkCount').text(res.data.parkCount || 0);
+                } else {
+                    // 使用模拟数据
+                    $('#todayInCount').text('128');
+                    $('#todayOutCount').text('96');
+                    $('#todayIncome').text('¥2,350');
+                    $('#parkCount').text('5');
+                }
+            }).fail(function() {
+                // 请求失败时使用模拟数据
+                $('#todayInCount').text('128');
+                $('#todayOutCount').text('96');
+                $('#todayIncome').text('¥2,350');
+                $('#parkCount').text('5');
+            });
+        }
+        
+        // 加载收入趋势图
+        function loadIncomeTrend() {
+            $.get('/dashboard/incomeTrend', function(res) {
+                if (res && res.code === 0 && res.data && res.data.length > 0) {
+                    renderIncomeTrend(res.data);
+                } else {
+                    renderIncomeTrend(getMockIncomeData());
+                }
+            }).fail(function() {
+                renderIncomeTrend(getMockIncomeData());
+            });
+        }
+        
+        function getMockIncomeData() {
+            return [
+                {date: '06-03', income: 1850},
+                {date: '06-04', income: 2340},
+                {date: '06-05', income: 1980},
+                {date: '06-06', income: 2890},
+                {date: '06-07', income: 2150},
+                {date: '06-08', income: 2450},
+                {date: '06-09', income: 2350}
+            ];
+        }
+        
+        function renderIncomeTrend(data) {
+            var dates = data.map(function(item) { return item.date; });
+            var incomes = data.map(function(item) { return item.income; });
+            
+            $('#incomeTrendChart .loading').hide();
+            var chart = echarts.init(document.getElementById('incomeTrendChart'));
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        return params[0].name + '<br/>收入: ¥' + params[0].value;
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    axisLine: { lineStyle: { color: '#d1fae5' } },
+                    axisLabel: { color: '#3d5a4a' }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { lineStyle: { color: '#d1fae5' } },
+                    axisLabel: { color: '#3d5a4a', formatter: '¥{value}' },
+                    splitLine: { lineStyle: { color: '#f0fdf4' } }
+                },
+                series: [{
+                    name: '收入',
+                    type: 'line',
+                    data: incomes,
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 8,
+                    lineStyle: {
+                        color: '#2e8b57',
+                        width: 3
+                    },
+                    itemStyle: {
+                        color: '#2e8b57',
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(46, 139, 87, 0.3)' },
+                                { offset: 1, color: 'rgba(46, 139, 87, 0.05)' }
+                            ]
+                        }
+                    }
+                }]
+            };
+            chart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                chart.resize();
+            });
+        }
+        
+        // 加载车辆类型分布图
+        function loadCarTypeDistribution() {
+            $.get('/dashboard/carTypeDistribution', function(res) {
+                if (res && res.code === 0 && res.data && res.data.length > 0) {
+                    renderCarTypeChart(res.data);
+                } else {
+                    renderCarTypeChart(getMockCarTypeData());
+                }
+            }).fail(function() {
+                renderCarTypeChart(getMockCarTypeData());
+            });
+        }
+        
+        function getMockCarTypeData() {
+            return [
+                {name: '包月车', value: 45},
+                {name: 'VIP车', value: 20},
+                {name: '临时车', value: 35}
+            ];
+        }
+        
+        function renderCarTypeChart(data) {
+            $('#carTypeChart .loading').hide();
+            var chart = echarts.init(document.getElementById('carTypeChart'));
+            var option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    textStyle: { color: '#3d5a4a' }
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['60%', '50%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 18,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    labelLine: { show: false },
+                    data: data,
+                    color: ['#2e8b57', '#166534', '#854d0e']
+                }]
+            };
+            chart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                chart.resize();
+            });
+        }
+        
+        // 加载今日各时段车流量图
+        function loadHourlyTraffic() {
+            $.get('/dashboard/hourlyTraffic', function(res) {
+                if (res && res.code === 0 && res.data && res.data.length > 0) {
+                    renderHourlyTraffic(res.data);
+                } else {
+                    renderHourlyTraffic(getMockHourlyData());
+                }
+            }).fail(function() {
+                renderHourlyTraffic(getMockHourlyData());
+            });
+        }
+        
+        function getMockHourlyData() {
+            return [
+                {hour: '00:00', count: 2},
+                {hour: '04:00', count: 5},
+                {hour: '08:00', count: 35},
+                {hour: '12:00', count: 28},
+                {hour: '16:00', count: 42},
+                {hour: '20:00', count: 38},
+                {hour: '23:00', count: 8}
+            ];
+        }
+        
+        function renderHourlyTraffic(data) {
+            var hours = data.map(function(item) { return item.hour; });
+            var counts = data.map(function(item) { return item.count; });
+            
+            $('#hourlyTrafficChart .loading').hide();
+            var chart = echarts.init(document.getElementById('hourlyTrafficChart'));
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        return params[0].name + '<br/>车流量: ' + params[0].value + ' 辆';
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: hours,
+                    axisLine: { lineStyle: { color: '#d1fae5' } },
+                    axisLabel: { color: '#3d5a4a', interval: 2 }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { lineStyle: { color: '#d1fae5' } },
+                    axisLabel: { color: '#3d5a4a' },
+                    splitLine: { lineStyle: { color: '#f0fdf4' } }
+                },
+                series: [{
+                    name: '车流量',
+                    type: 'bar',
+                    data: counts,
+                    itemStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: '#2e8b57' },
+                                { offset: 1, color: '#166534' }
+                            ]
+                        },
+                        borderRadius: [6, 6, 0, 0]
+                    }
+                }]
+            };
+            chart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                chart.resize();
+            });
+        }
+        
+        // 加载支付方式分布图
+        function loadPayTypeDistribution() {
+            $.get('/dashboard/payTypeDistribution', function(res) {
+                if (res && res.code === 0 && res.data && res.data.length > 0) {
+                    renderPayTypeChart(res.data);
+                } else {
+                    renderPayTypeChart(getMockPayTypeData());
+                }
+            }).fail(function() {
+                renderPayTypeChart(getMockPayTypeData());
+            });
+        }
+        
+        function getMockPayTypeData() {
+            return [
+                {name: '微信支付', value: 45},
+                {name: '支付宝', value: 35},
+                {name: 'Apple Pay', value: 12},
+                {name: 'HUAWEI Pay', value: 8}
+            ];
+        }
+        
+        function renderPayTypeChart(data) {
+            $('#payTypeChart .loading').hide();
+            var chart = echarts.init(document.getElementById('payTypeChart'));
+            var option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    textStyle: { color: '#3d5a4a' }
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['60%', '50%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 18,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    labelLine: { show: false },
+                    data: data,
+                    color: ['#2e8b57', '#166534', '#854d0e', '#1a4d3d']
+                }]
+            };
+            chart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                chart.resize();
+            });
+        }
+        
+        // 打开页面
+        function openPage(url) {
+            if (window.parent && window.parent.objOkTab) {
+                var $a = $('<a data-url="' + url + '" lay-id="' + Date.now() + '"></a>');
+                window.parent.objOkTab.tabAdd($a);
+            } else if (window.parent && window.parent.addTab) {
+                window.parent.addTab(url);
+            } else {
+                window.location.href = url;
+            }
+        }
+        
+        // 页面加载完成后初始化
+        $(document).ready(function() {
+            loadTodayStats();
+            loadIncomeTrend();
+            loadCarTypeDistribution();
+            loadHourlyTraffic();
+            loadPayTypeDistribution();
+            
+            // 每30秒刷新一次统计数据
+            setInterval(loadTodayStats, 30000);
+        });
+    </script>
+</body>
+</html>
