@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/smartparking?characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - SERVER_PORT=8081
+      - file.path=/tmp/images
+    depends_on:
+      - mysql
+    volumes:
+      - ./images:/tmp/images
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=smartparking
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./smartparking.sql:/docker-entrypoint-initdb.d/smartparking.sql
+    ports:
+      - "3306:3306"
+
+volumes:
+  mysql_data:
