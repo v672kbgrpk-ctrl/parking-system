@@ -1,13 +1,13 @@
-FROM maven:3.8.5-openjdk-17 AS build
+FROM maven:3.8.5-openjdk-8 AS build
 WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 COPY src ./src
-RUN mvn package -DskipTests
+RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:17-jdk
+FROM openjdk:8-jdk-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/Smart-Parking-1.0-SNAPSHOT.jar app.jar
 
 # 创建文件上传目录
 RUN mkdir -p /tmp/images

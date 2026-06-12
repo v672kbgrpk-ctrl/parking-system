@@ -1,0 +1,12 @@
+target
+*.iml
+.idea
+.vscode
+.git
+.gitignore
+README.md
+RAILWAY.md
+docker-compose.yml
+*.log
+*.jar
+!target/Smart-Parking-1.0-SNAPSHOT.jar
