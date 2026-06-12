@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: parking-system
+    runtime: java
+    repo: https://github.com/v672kbgrpk-ctrl/parking-system
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/*.jar
+    plan: free
+    branch: main
